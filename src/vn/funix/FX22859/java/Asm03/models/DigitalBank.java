@@ -27,6 +27,7 @@ public class DigitalBank extends Bank {
         return null;
     }
 
+    //Kiểm tra account number có 6 số
     public static boolean checkAccNumber(String accNumber) {
         Pattern pattern = Pattern.compile("^\\d{6}$");
         Matcher matcher = pattern.matcher(accNumber);
@@ -79,11 +80,7 @@ public class DigitalBank extends Bank {
         }
     }
 
-    public void addAccount(Account account) {
-        AccountDao.addAccount(account);
-    }
-
-
+    //Method xem thông tin KH
     public void showCustomers() {
         List<Customer> customers = CustomerDao.list();
         List<Account> accounts = AccountDao.list();
@@ -98,6 +95,11 @@ public class DigitalBank extends Bank {
                 customer.displayInformation();
             }
         }
+    }
+
+    //Method nhập KH vào CustomerDao
+    public void inputCustomers() throws IOException {
+        CustomerDao.save(getCustomers());
     }
 
     public void showCustomer(Customer customer) {
@@ -121,7 +123,52 @@ public class DigitalBank extends Bank {
         return AccountDao.getAccount(accNumber);
     }
 
+    //Method tạo tài khoản
+    public void addAccount(Scanner scanner, String customerId) {
+        //Kiểm tra KH đã tồn tại chưa
+        Customer customer = CustomerDao.getCustomer(customerId);
+        while (customer == null) {
+            System.out.println("Số CCCD không tồn tại.");
+            System.out.println("Vui lòng nhập lại CCCD: ");
+            customerId = scanner.next();
+            customer = CustomerDao.getCustomer(customerId);
+        }
+
+        //Nhập tk
+        System.out.println("Nhập số TK gồm 6 chữ số: ");
+        String accountNumber = scanner.next();
+        boolean isValidSendAcc = checkAccNumber(accountNumber);
+        while (!isValidSendAcc) {
+            accountNumber = scanner.next();
+            isValidSendAcc = checkAccNumber(accountNumber);
+        }
+
+        Account existedAccount = AccountDao.getAccountById(customerId, accountNumber);
+        while (existedAccount != null) {
+            System.out.println("Số TK đã tồn tại");
+            System.out.println("Vui lòng nhập lại số TK: ");
+            accountNumber = scanner.next();
+            existedAccount = AccountDao.getAccountById(customerId, accountNumber);
+        }
+        System.out.println("Nhập số dư: ");
+        double balance = scanner.nextDouble();
+        boolean isMinBalance = Account.minBalance(balance);
+
+        while (!isMinBalance) {
+            System.out.println("Số dư tối thiểu là 50.000: ");
+            System.out.println("Vui lòng nhập lại: ");
+            balance = scanner.nextDouble();
+            isMinBalance = Account.minBalance(balance);
+        }
+        //add Account
+        SavingsAccount account = new SavingsAccount(customerId, accountNumber, balance);
+        AccountDao.addAccount(account);
+    }
+
+
+    //Method chuyển tiền
     public void transfers(Scanner scanner, String customerId) {
+        //Kiểm tra KH đã tồn tại chưa
         Customer customer = CustomerDao.getCustomer(customerId);
         while (customer == null) {
             System.out.println("Số CCCD không tồn tại.");
@@ -133,6 +180,7 @@ public class DigitalBank extends Bank {
         // Hiển thị thông tin tài khoản của khách hàng
         this.showCustomer(customer);
 
+        //Tài khoản gửi tiền
         System.out.println("Nhập số tài khoản gửi: ");
         String sendAccountNumber = scanner.next();
         boolean isValidSendAcc = checkAccNumber(sendAccountNumber);
@@ -149,6 +197,7 @@ public class DigitalBank extends Bank {
             existedSendAccount = AccountDao.getAccountById(customerId, sendAccountNumber);
         }
 
+        //Tài khoản nhận
         System.out.println("Nhập số tài khoản nhận: ");
         String receiveAccountNumber = scanner.next();
         boolean isValidReceiveAcc = checkAccNumber(receiveAccountNumber);
@@ -164,6 +213,7 @@ public class DigitalBank extends Bank {
             existedReceiveAccount = AccountDao.getAccount(receiveAccountNumber);
         }
 
+        //Số tiền chuyển
         System.out.println("Nhập số tiền cần chuyển: ");
         double amount = scanner.nextDouble();
         while (amount <= 50000) {
@@ -171,6 +221,8 @@ public class DigitalBank extends Bank {
             System.out.println("Vui lòng nhập lại số tiền cần chuyển: ");
             amount = scanner.nextDouble();
         }
+
+        //Xác thực
         DecimalFormat decimalFormat = new DecimalFormat("#,##0đ");
         System.out.print("Xác nhận thực hiện chuyển " + decimalFormat.format(amount) + "đ từ tài khoản [" + sendAccountNumber + "] đến tài khoản [" + receiveAccountNumber + "] (Y/N): ");
         String confirmation = scanner.next();
@@ -178,6 +230,7 @@ public class DigitalBank extends Bank {
         if (!confirmation.toLowerCase().contains("y")) {
             System.out.println("Giao dịch đã bị hủy.");
         } else {
+            //Thực hiện chuyển tiền và cập nhật
             SavingsAccount senderAcc = (SavingsAccount) existedSendAccount;
             SavingsAccount receiveAcc = (SavingsAccount) existedReceiveAccount;
             senderAcc.transfers(receiveAcc, amount);
@@ -186,7 +239,9 @@ public class DigitalBank extends Bank {
         }
     }
 
+    //Method rút tiền
     public void withDraw(Scanner scanner, String customerId) {
+        //Kiểm tra KH đã tồn tại chưa
         Customer customer = CustomerDao.getCustomer(customerId);
         while (customer == null) {
             System.out.println("Số CCCD không tồn tại.");
@@ -198,28 +253,30 @@ public class DigitalBank extends Bank {
         // Hiển thị thông tin tài khoản của khách hàng
         this.showCustomer(customer);
 
+        //Tk rút tiền
         System.out.println("Nhập số tài khoản cần rút tiền: ");
-        String sendAccountNumber = scanner.next();
-        boolean isValidSendAcc = checkAccNumber(sendAccountNumber);
+        String accountNumber = scanner.next();
+        boolean isValidSendAcc = checkAccNumber(accountNumber);
         while (!isValidSendAcc) {
-            sendAccountNumber = scanner.next();
-            isValidSendAcc = checkAccNumber(sendAccountNumber);
+            accountNumber = scanner.next();
+            isValidSendAcc = checkAccNumber(accountNumber);
         }
 
-        Account existedSendAccount = AccountDao.getAccountById(customerId, sendAccountNumber);
-        while (existedSendAccount == null) {
+        Account existedAccount = AccountDao.getAccountById(customerId, accountNumber);
+        while (existedAccount == null) {
             System.out.println("Số TK không tồn tại");
             System.out.println("Vui lòng nhập lại số TK: ");
-            sendAccountNumber = scanner.next();
-            existedSendAccount = AccountDao.getAccountById(customerId, sendAccountNumber);
+            accountNumber = scanner.next();
+            existedAccount = AccountDao.getAccountById(customerId, accountNumber);
         }
+
+        //Số tiền rút
         System.out.println("Nhập số tiền cần rút: ");
         double amount = scanner.nextDouble();
-        SavingsAccount acc = (SavingsAccount) existedSendAccount;
+        SavingsAccount acc = (SavingsAccount) existedAccount;
         if (acc.withDraw(amount)) {
             AccountDao.update(acc);
             acc.log(amount);
-
             //add Transaction
             try {
                 acc.createTransaction(amount, true, TransactionType.WITHDRAW);

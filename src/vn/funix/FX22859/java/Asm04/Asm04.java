@@ -1,11 +1,7 @@
 package vn.funix.FX22859.java.Asm04;
 
-import vn.funix.FX22859.java.Asm02.Account;
 import vn.funix.FX22859.java.Asm02.Customer;
 import vn.funix.FX22859.java.Asm03.models.DigitalBank;
-import vn.funix.FX22859.java.Asm03.models.SavingsAccount;
-import vn.funix.FX22859.java.Asm04.dao.AccountDao;
-import vn.funix.FX22859.java.Asm04.dao.CustomerDao;
 import vn.funix.FX22859.java.Asm04.exception.CustomerIdNotValidException;
 
 import java.io.BufferedReader;
@@ -127,43 +123,10 @@ public class Asm04 {
             System.out.println(e.getMessage());
             addSavingsAccount();
         }
-        Customer customer = activeBank.getCustomer(customerId);
-        while (customer == null) {
-            System.out.println("Số CCCD không tồn tại.");
-            System.out.println("Vui lòng nhập lại CCCD: ");
-            customerId = scanner.next();
-            customer = activeBank.getCustomer(customerId);
-        }
-
-        System.out.println("Nhập số TK gồm 6 chữ số: ");
-        String accNumber = scanner.next();
-        while (!activeBank.checkAccNumber(accNumber)) {
-            accNumber = scanner.next();
-        }
-        Account isExistedAccount = activeBank.getAccountBy(accNumber);
-        while (isExistedAccount != null) {
-            System.out.println("Số tk đã tồn tại.");
-            System.out.println("Vui lòng nhập lại số tk: ");
-            accNumber = scanner.next();
-            isExistedAccount = activeBank.getAccountBy(accNumber);
-        }
-
-        System.out.println("Nhập số dư: ");
-        double balance = scanner.nextDouble();
-        boolean isMinBalance = Account.minBalance(balance);
-
-        while (!isMinBalance) {
-            System.out.println("Số dư tối thiểu là 50.000: ");
-            System.out.println("Vui lòng nhập lại: ");
-            balance = scanner.nextDouble();
-            isMinBalance = Account.minBalance(balance);
-        }
-        // Tạo đối tượng mới cho lớp SavingsAccount
-        SavingsAccount account = new SavingsAccount(customerId, accNumber, balance);
-        activeBank.addAccount(account);
+        activeBank.addAccount(scanner, customerId);
     }
 
-    //CN4: CHUYỂN
+    //CN4: CHUYỂN TIỀN
     public static void transfer() {
         System.out.println("Nhập số CCCD của khách hàng: ");
         String customerId = scanner.next();
@@ -206,8 +169,9 @@ public class Asm04 {
             customerId = scanner.next();
             customer = activeBank.getCustomer(customerId);
         }
-        activeBank.showCustomer(customer);
-        activeBank.showTransactions(customer);
+        activeBank.showCustomer(customer); //In thông tin KH
+        activeBank.showTransactions(customer); //In lịch sử giao dịch của KH
+        menu();
     }
 
 }

@@ -86,23 +86,25 @@ public class SavingsAccount extends Account implements Withdraw, ReportService, 
     public boolean transfers(Account receiveAccount, double amount) {
         if (isAccepted(amount)) {
             double newBalance = getBalance() - amount;
-            setBalance(newBalance);
-            // add Transaction
+            setBalance(newBalance); //Cập nhật số dư tk gửi
+
+            // add Transaction cho tk gửi
             try {
                 createTransaction(amount, true, TransactionType.TRANSFER);
             } catch (IOException io) {
                 System.out.println("IO Exception" + io.getMessage());
             }
             newBalance = receiveAccount.getBalance() + amount;
-            receiveAccount.setBalance(newBalance);
-            // add Transaction
+            receiveAccount.setBalance(newBalance); //Cập nhật số dư tk nhận
+
+            // add Transaction cho tk nhận
             try {
                 receiveAccount.createTransaction(amount, true, TransactionType.DEPOSIT);
             } catch (IOException io) {
                 System.out.println("IO Exception" + io.getMessage());
             }
             System.out.println("Giao dịch thành công");
-            log(amount, receiveAccount);
+            log(amount, receiveAccount); //Biên lai giao dịch
             return true;
         }
         System.out.println("Giao dịch không thành công");

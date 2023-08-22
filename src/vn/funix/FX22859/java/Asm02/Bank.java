@@ -51,7 +51,5 @@ public class Bank {
                 });
     }
 
-    public void inputCustomers() throws IOException {
-        CustomerDao.save(getCustomers());
-    }
+
 }
